@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jupi§o Ink</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <style>
+        /* =========================================
+           1. THEME VARIABLES 
+           ========================================= */
+        
+        /* LIGHT MODE: Electric Cyan & Premium Silver */
+        :root { 
+            --primary: #00E5FF;       /* Electric Cyan */
+            --primary-dark: #00B8D4;  /* Darker Cyan */
+            --bg-body: #F0F2F5;       /* Premium Silver/Grey */
+            --surface: #FFFFFF;       /* Pure White Cards */
+            --text-main: #263238;     /* Dark Grey Text */
+            --text-sub: #546E7A;      /* Blue-Grey Text */
+            --border: #CFD8DC;        /* Metallic Border */
+            --input-bg: #ECEFF1;      /* Light Silver Input */
+            --success: #00C853;       /* Bright Green */
+            --info: #00E5FF; 
+            --warning: #FFD600;       /* Electric Yellow */
+            --danger: #FF1744;        /* Bright Red */
+            --wait: #78909C; 
+            --shadow: 0 10px 30px rgba(0, 229, 255, 0.15); /* Cyan Glow */
+            --radius: 20px; 
+            --header-h: 70px; 
+        }
+
+        /* DARK MODE: Royal Red & Pure Black */
+        body.dark-mode { 
+            --bg-body: #000000;       /* Pure Black */
+            --surface: #121212;       /* Dark Surface */
+            --text-main: #FFFFFF;     /* White Text */
+            --text-sub: #B0BEC5; 
+            --border: #333333; 
+            --input-bg: #1A1A1A; 
+            --primary: #FF0000;       /* Bright Royal Red */
+            --primary-dark: #B71C1C;
+            --shadow: 0 10px 30px rgba(255, 0, 0, 0.3); /* Red Glow */
+            --success: #00E676;
+        }
+
+        /* =========================================
+           2. CORE SETUP & CRITICAL FIXES
+           ========================================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: 'Outfit', sans-serif; }
+        
+        body { background-color: var(--bg-body); color: var(--text-main); height: 100vh; overflow: hidden; transition: background 0.3s ease; }
+
+        /* FIX 1: Allow Typing (User Select) */
+        input, textarea, select {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            pointer-events: auto !important;
+            z-index: 1000;
+            position: relative;
+        }
+
+        /* FIX 2: Hide Ghost Inputs when screen is hidden */
+        .screen:not(.active) { display: none !important; }
+        
+        /* 3. HEADER (Fixed Top) */
+        .app-header { 
+            position: fixed; top: 0; left: 0; width: 100%; height: var(--header-h); 
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px; 
+            z-index: 5000 !important; /* Above Inputs */
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        /* Dark Mode Header */
+        body.dark-mode .app-header { background: #000000 !important; border-bottom: 1px solid #333; }
+        
+        .header-title { font-weight: 800; font-size: 22px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+        .header-btn { width: 42px; height: 42px; border-radius: 14px; background: var(--surface); color: var(--text-main); display: flex; align-items: center; justify-content: center; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: none; cursor: pointer; }
+        body.dark-mode .header-btn { background: rgba(255,255,255,0.15); color: #fff; }
+
+        /* Logo Sizing & Toggle */
+        .header-title img { height: 40px !important; width: 40px !important; object-fit: contain !important; padding: 2px; }
+        .logo-light { display: block !important; }
+        .logo-dark  { display: none !important; }
+        body.dark-mode .logo-light { display: none !important; }
+        body.dark-mode .logo-dark  { display: block !important; }
+
+        /* 4. INPUT FIELDS (Dynamic Colors) */
+        .input-group { position: relative; margin-bottom: 30px; margin-top: 15px; } 
+
+        .input-group input, .input-group select, .input-group textarea { 
+            width: 100%; padding: 16px; font-size: 16px; 
+            background: var(--input-bg); 
+            border: 1.5px solid var(--primary) !important; 
+            color: var(--primary) !important;
+            font-weight: 700;
+            border-radius: 16px; outline: none; transition: 0.3s; appearance: none; -webkit-appearance: none;
+        }
+        .input-group label { 
+            position: absolute; left: 16px; top: 18px; 
+            color: var(--primary) !important; 
+            font-weight: 600; font-size: 16px; 
+            pointer-events: none; transition: 0.3s; padding: 0 5px; 
+            background: transparent; z-index: 1001 !important;
+        }
+        .input-group input::placeholder, .input-group textarea::placeholder {
+            color: var(--primary) !important; opacity: 0.6; font-weight: 600;
+        }
+        
+        /* Dark Mode Inputs (White) */
+        body.dark-mode .input-group input, 
+        body.dark-mode .input-group textarea, 
+        body.dark-mode .input-group select { border-color: #FFFFFF !important; color: #FFFFFF !important; }
+        body.dark-mode .input-group label { color: #FFFFFF !important; }
+        body.dark-mode .input-group input::placeholder { color: #FFFFFF !important; }
+
+        .input-group input:focus ~ label, .input-group input:not(:placeholder-shown) ~ label, .input-group select:focus ~ label, .input-group select:valid ~ label, .input-group textarea:focus ~ label, .input-group textarea:not(:placeholder-shown) ~ label { top: -10px; font-size: 12px; background: var(--surface); margin-left: 10px; border-radius: 4px; }
+        .password-toggle { position: absolute; right: 15px; top: 18px; color: var(--text-sub); cursor: pointer; font-size: 16px; z-index: 1002; }
+
+        /* 5. MENU GRID (Cyan vs Red) */
+        .grid-menu { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .menu-card { background: var(--surface); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow); display: flex; flex-direction: column; align-items: center; transition: 0.3s; cursor: pointer; }
+        .menu-card.disabled { opacity: 0.5; filter: grayscale(1); pointer-events: none; background: #e0e0e0; }
+        .menu-icon { width: 50px; height: 50px; border-radius: 15px; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: white; }
+
+        /* Light Mode Gradients */
+        .g-1 { background: linear-gradient(135deg, #00E5FF, #00B8D4); }
+        .g-2 { background: linear-gradient(135deg, #26C6DA, #00ACC1); }
+        .g-3 { background: linear-gradient(135deg, #4DD0E1, #00838F); }
+        .g-4 { background: linear-gradient(135deg, #FF1744, #D50000); }
+
+        /* Dark Mode Gradients */
+        body.dark-mode .g-1 { background: linear-gradient(135deg, #FF0000, #B71C1C); }
+        body.dark-mode .g-2 { background: linear-gradient(135deg, #D32F2F, #8B0000); }
+        body.dark-mode .g-3 { background: linear-gradient(135deg, #FF5252, #C62828); }
+        body.dark-mode .g-4 { background: linear-gradient(135deg, #FF0000, #8B0000); }
+
+        /* Fix Refund Tab Colors */
+        #v-refund h3 { color: var(--primary) !important; }
+        #v-refund .btn-main { background: var(--primary) !important; }
+        #r-reason { color: var(--primary) !important; }
+
+        /* 6. BOTTOM NAV */
+        .bottom-nav { position: fixed; bottom: 20px; left: 20px; right: 20px; height: 70px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 6000 !important; }
+        .nav-item { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-sub); font-size: 9px; gap: 4px; padding: 10px; flex: 1; border-radius: 16px; }
+        .nav-item.active { color: var(--primary); background: rgba(0, 229, 255, 0.1); }
+        body.dark-mode .nav-item.active { background: rgba(255, 0, 0, 0.15); }
+        .nav-item i { font-size: 18px; }
+        .notif-dot { position: absolute; top: 10px; right: 20px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; display: none; }
+
+        /* 7. SPLASH SCREEN (Tech) */
+        #splash {
+            background: #000000; /* Always Black Base */
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 20000 !important; /* Top Level */
+            overflow: hidden; position: fixed; inset: 0; 
+            transition: opacity 0.5s ease, visibility 0.5s;
+            pointer-events: none; opacity: 0; visibility: hidden;
+        }
+        #splash.active { pointer-events: auto; opacity: 1; visibility: visible; }
+        
+        .splash-logo { width: 140px; height: 140px; background: #000; border: 2px solid var(--primary); border-radius: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px var(--primary); margin-bottom: 20px; z-index: 2; }
+        /* FIX SPLASH LOGO: Fills the box completely */
+.splash-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important; /* Forces image to fill the circle */
+    padding: 0 !important;        /* Removes any gap */
+    border-radius: 30px;          /* Matches the box corners */
+}
+        .tech-icon { position: absolute; color: #333; opacity: 0.3; z-index: 1; }
+        .gear-big { font-size: 180px; top: -50px; left: -50px; animation: spin 10s linear infinite; }
+        .gear-small { font-size: 100px; bottom: 20px; right: -20px; animation: spin 6s linear infinite reverse; }
+        .chip-icon { font-size: 80px; top: 50%; right: 20px; opacity: 0.2; }
+        
+        .loader-dots { display: flex; gap: 8px; justify-content: center; margin-top: 20px; z-index: 2; }
+        .dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        /* 8. SPECIAL FEATURES */
+        .fa-spin-custom { animation: spin 1s linear; }
+        
+        /* Refresh Overlay */
+        #refresh-overlay {
+            position: fixed; inset: 0; 
+            background: rgba(0, 229, 255, 0.85); /* Cyan Overlay in Light */
+            backdrop-filter: blur(8px); z-index: 10000; display: none; flex-direction: column; 
+            align-items: center; justify-content: center; color: white; opacity: 0; transition: opacity 0.3s ease;
+        }
+        body.dark-mode #refresh-overlay { background: rgba(255, 0, 0, 0.85); }
+        .refresh-anim { width: 80px; height: 80px; animation: breathe 1.2s infinite ease-in-out; }
+
+        /* Tick Button */
+        .custom-tick-row { display: flex; align-items: center; gap: 15px; padding: 15px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; cursor: pointer; transition: 0.3s; margin-bottom: 20px; }
+        .tick-circle { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--text-sub); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; transition: 0.3s; }
+        .custom-tick-row.active { border-color: var(--primary); background: rgba(0, 229, 255, 0.05); }
+        body.dark-mode .custom-tick-row.active { background: rgba(255, 0, 0, 0.1); }
+        .custom-tick-row.active .tick-circle { background: var(--primary); border-color: var(--primary); transform: scale(1.1); }
+        /* Dark Mode Tick Override */
+        body.dark-mode .tick-circle { border-color: #FFFFFF !important; }
+        body.dark-mode .custom-tick-row.active .tick-circle { border-color: var(--primary) !important; }
+
+        /* Stepper & Game */
+        .stepper { display: flex; flex-direction: column; margin-top: 20px; padding-left: 5px; }
+        .step { display: flex; gap: 15px; position: relative; padding-bottom: 25px; }
+        .step:last-child { padding-bottom: 0; }
+        .step-line { position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: #E0E0E0; z-index: 1; }
+        .step.completed .step-line { background: var(--primary); }
+        .step-icon { width: 30px; height: 30px; border-radius: 50%; background: var(--surface); border: 2px solid #E0E0E0; color: #b2bec3; display: flex; align-items: center; justify-content: center; font-size: 12px; z-index: 2; transition: 0.3s; }
+        .step.active .step-icon, .step.completed .step-icon { background: var(--primary); border-color: var(--primary); color: white; transform: scale(1.1); }
+        .step-content { display: flex; flex-direction: column; justify-content: center; }
+        .step-title { font-size: 14px; font-weight: 500; color: var(--text-sub); }
+        .step.active .step-title { color: var(--text-main); font-weight: 700; }
+        .step-desc { font-size: 11px; color: var(--text-sub); opacity: 0.8; }
+
+        .game-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 15px; }
+        .game-card { aspect-ratio: 1; background: var(--primary); border-radius: 8px; cursor: pointer; position: relative; transform-style: preserve-3d; transition: transform 0.6s; }
+        .game-card.flipped { transform: rotateY(180deg); }
+        .card-face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; padding: 2px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .card-front { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; font-weight: bold; font-size: 14px; }
+        .card-back { background: var(--surface); color: var(--text-main); transform: rotateY(180deg); font-weight: 500; border: 1px solid var(--border); }
+        .scratch-container { position: relative; width: 100%; height: 200px; border-radius: 20px; overflow: hidden; margin: 20px 0; box-shadow: 0 10px 20px rgba(0,0,0,0.1); touch-action: none; background: #eee; }
+        .scratch-result { position: absolute; inset: 0; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 1; }
+        canvas#scratch-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 2; cursor: pointer; touch-action: none; }
+
+        /* 9. UTILS */
+        .card { background: var(--surface); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; position: relative; }
+        .btn-main { width: 100%; padding: 16px; border-radius: 16px; background: var(--primary); color: #fff; font-size: 16px; font-weight: 600; border: none; box-shadow: 0 5px 15px var(--shadow); display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 10px; }
+        #error-msg { display:none; color:var(--danger); margin-top:20px; font-weight:bold; }
+        .retry-btn { margin-top:10px; padding:10px 20px; background:var(--surface); border:1px solid var(--border); border-radius:10px; color:var(--text-main); display:none; }
+        .pfp-container { position: relative; width: 80px; height: 80px; margin: 0 auto 10px; }
+        .pfp-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: var(--primary); border: 2px solid var(--primary); }
+        .pfp-edit { position: absolute; bottom: 0; right: 0; background: var(--text-main); color: var(--surface); width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+        .credits { position: absolute; bottom: 20px; left: 0; width: 100%; text-align: center !important; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; color: var(--text-sub); opacity: 0.7; pointer-events: none; }
+        #v-settings p { text-align: center; }
+        .stars { display: flex; justify-content: center; gap: 5px; margin: 15px 0; }
+        .star { font-size: 30px; color: var(--text-sub); cursor: pointer; transition: 0.2s; }
+        .star.selected { color: #FFD600; }
+        
+        .screen { position: fixed; inset: 0; z-index: 1; background: var(--bg-body); display: none; flex-direction: column; opacity: 0; transition: opacity 0.3s; }
+        .screen.active { display: flex; opacity: 1; z-index: 20; }
+        .view-container { flex: 1; overflow-y: auto; padding: 20px; padding-bottom: 120px; padding-top: var(--header-h); transition: 0.5s; }
+        .view { display: none; animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        .view.active-view { display: block; }
+
+        #custom-alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 20000 !important; display: none; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .custom-alert-box { background: var(--surface); width: 85%; max-width: 320px; border-radius: 20px; padding: 25px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3); animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes breathe { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 20px white; } 100% { transform: scale(1); opacity: 0.8; } }
+        /* --- PREMIUM LOADING BAR --- */
+.loading-container {
+    width: 220px;
+    margin-top: 30px;
+    z-index: 10;
+    text-align: center;
+}
+
+.loading-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1); /* Subtle track */
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.loading-bar {
+    height: 100%;
+    width: 0%;
+    background: var(--primary); /* Red or Cyan */
+    border-radius: 10px;
+    box-shadow: 0 0 15px var(--primary); /* Glowing Effect */
+    transition: width 0.05s linear;
+}
+
+.loading-text {
+    margin-top: 12px;
+    font-family: monospace; /* Tech font */
+    font-size: 14px;
+    color: var(--primary);
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+/* --- REFRESH LOGO SWITCHER --- */
+
+/* Default (Light Mode): Show Light, Hide Dark */
+.ref-light { display: block !important; }
+.ref-dark { display: none !important; }
+
+/* Dark Mode: Hide Light, Show Dark */
+body.dark-mode .ref-light { display: none !important; }
+body.dark-mode .ref-dark { display: block !important; }
+    </style>
+</head>
+<body>
+
+    <!-- INSTANT THEME LOADER -->
+    <script>
+        (function() {
+            try {
+                const localTheme = localStorage.getItem('theme');
+                // Default to Dark if null
+                if (localTheme === 'dark' || localTheme === null) {
+                    document.body.classList.add('dark-mode');
+                }
+            } catch (e) {}
+        })();
+    </script>
+
+    <!-- SPLASH SCREEN (Tech/Black) -->
+    <div id="splash" class="screen active">
+        <i class="fa-solid fa-gear tech-icon gear-big"></i>
+        <i class="fa-solid fa-gear tech-icon gear-small"></i>
+        <i class="fa-solid fa-microchip tech-icon chip-icon"></i>
+        
+        <div class="splash-logo">
+            <!-- Your Logo Link -->
+            <img src="/20260119_144314.png" onerror="this.src='https://img.icons8.com/color/96/fountain-pen.png'">
+        </div>
+        
+        <h1 style="font-weight:900; font-size:36px; color:#FFF; font-family:monospace; margin-top:10px; z-index:2;">
+            JUPI§O <span style="color:var(--primary);">INK</span>
+        </h1>
+        <p style="color:#888; font-size:10px; letter-spacing:4px; margin-top:5px; z-index:2;">DEVELOPER BUILD v1.0</p>
+        
+       <!-- NEW LOADING BAR HTML -->
+<div class="loading-container">
+    <div class="loading-track">
+        <div id="progress-bar" class="loading-bar"></div>
+    </div>
+    <div class="loading-text">LOADING <span id="progress-text">0</span>%</div>
+</div>
+        <p id="error-msg" style="z-index:2;">Connection Slow...</p>
+        <button id="retry-btn" class="retry-btn" onclick="location.reload()" style="z-index:2;">Retry</button>
+    </div>
+
+    <!-- UPDATE SCREEN -->
+    <div id="update-screen" class="screen" style="z-index:10000; justify-content:center; padding:40px; text-align:center; background:var(--bg-body);">
+        <i class="fa-solid fa-rocket" style="font-size:60px; color:var(--primary); margin-bottom:20px;"></i>
+        <h1 style="color:var(--text-main);">Update Required</h1>
+        <p style="color:var(--text-sub); margin:15px 0 30px;">A new version of Jupi§o Ink is available.</p>
+        <button class="btn-main" onclick="location.reload()">Check for Updates</button>
+    </div>
+
+  <!-- UPDATE THIS BLOCK IN YOUR HTML -->
+<div id="refresh-overlay">
+    <div class="refresh-anim">
+        <!-- 1. LIGHT MODE LOGO (e.g., Cyan/Black) -->
+        <img class="ref-light" 
+             src="/20260119_194425.png" 
+             style="width:100%; height:100%; object-fit:contain;">
+
+        <!-- 2. DARK MODE LOGO (e.g., Red/White) -->
+        <img class="ref-dark" 
+             src="/20260119_194525.png" 
+             style="display:none; width:100%; height:100%; object-fit:contain;">
+    </div>
+    <p style="margin-top:20px; font-weight:700; letter-spacing:3px; font-size:12px; color: white;">SYNCING...</p>
+</div>
+
+    <!-- AUTH SCREEN -->
+    <div id="auth" class="screen" style="justify-content:center; padding:30px;">
+        <h1 style="color:var(--primary); font-size:36px; margin-bottom:10px;">Welcome</h1>
+        <p style="color:var(--text-sub); margin-bottom:40px;">Login or Register</p>
+        <div class="input-group"><input type="number" id="auth-phone" placeholder=" " required><label>Phone Number</label></div>
+        <div class="input-group"><input type="text" id="auth-name" placeholder=" " required><label>Full Name</label></div>
+        <div class="input-group"><input type="password" id="auth-pass" placeholder=" " required style="padding-right:40px;"><label>Password</label><i class="fa-solid fa-eye password-toggle" onclick="togglePass('auth-pass', this)"></i></div>
+        <button class="btn-main" onclick="register()">Login / Create Account</button>
+        <div class="credits"><p>Creator: Tonmoy Kumar Deb</p></div>
+    </div>
+    
+    <!-- LOCK SCREEN -->
+    <div id="lock-screen" class="screen" style="justify-content:center; padding:30px;">
+        <div style="text-align:center; margin-bottom:30px;"><div style="width:70px; height:70px; background:var(--bg-body); border-radius:50%; margin:0 auto 15px; display:flex; align-items:center; justify-content:center; color:var(--primary); font-size:24px; box-shadow:var(--shadow);"><i class="fa-solid fa-lock"></i></div><h2 id="lock-name" style="color:var(--text-main);">Welcome Back</h2></div>
+        <div class="input-group"><input type="password" id="unlock-pass" placeholder=" " required style="padding-right:40px;"><label>Password</label><i class="fa-solid fa-eye password-toggle" onclick="togglePass('unlock-pass', this)"></i></div>
+        <button class="btn-main" onclick="unlock()">Unlock App</button>
+        <p style="text-align:center; margin-top:20px; color:var(--danger); font-size:12px; cursor:pointer;" onclick="resetApp()">Forgot Password?</p>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app" class="screen">
+        <header class="app-header">
+            <div class="header-title">
+                <img class="logo-light" src="/20260119_145158.png" onerror="this.src='https://img.icons8.com/color/96/fountain-pen.png'">
+                <img class="logo-dark" src="/20260119_144314.png" onerror="this.style.display='none'">
+                <span id="header-txt" style="margin-left: 8px;">Jupi§o</span>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="header-btn" id="refresh-btn" onclick="refreshNotifs()"><i class="fa-solid fa-rotate-right" id="refresh-icon"></i></button>
+                <button class="header-btn" id="back-btn" onclick="nav('home')" style="display:none;"><i class="fa-solid fa-arrow-left"></i></button>
+            </div>
+        </header>
+        
+        <div class="view-container">
+            <!-- HOME -->
+            <div id="v-home" class="view active-view">
+                <div class="card" style="background:var(--primary); color:#fff; border:none;"><h2 id="greet-txt">Hello</h2><p style="opacity:0.8; font-size:14px;">Ready to ink your ideas?</p></div>
+                <h4 style="margin: 20px 0 15px; color:var(--text-sub);">Services</h4>
+                <div class="grid-menu">
+                    <div id="btn-new-order" class="menu-card" onclick="nav('apply')"><div class="menu-icon g-1"><i class="fa-solid fa-file-pen"></i></div><strong>New Order</strong></div>
+                    <div class="menu-card" onclick="nav('status')"><div class="menu-icon g-2"><i class="fa-solid fa-magnifying-glass"></i></div><strong>Tracking</strong></div>
+                    <div class="menu-card" onclick="nav('payments')"><div class="menu-icon g-3"><i class="fa-solid fa-wallet"></i></div><strong>Payments</strong></div>
+                    <div class="menu-card" onclick="nav('refund')"><div class="menu-icon g-4"><i class="fa-solid fa-rotate-left"></i></div><strong>Refund</strong></div>
+                </div>
+            </div>
+
+            <!-- NEW ORDER (APPLY) -->
+            <div id="v-apply" class="view">
+                <h2 style="margin-bottom:20px;">Place Order</h2>
+                <div id="shop-closed-banner" style="display:none; background:var(--danger); color:white; padding:15px; border-radius:15px; margin-bottom:20px; text-align:center;">
+                    <i class="fa-solid fa-door-closed" style="font-size:24px;"></i><br><strong>Shop is currently CLOSED</strong>
+                </div>
+                <div class="card" id="apply-card">
+                    <p style="color:var(--primary); font-size:13px; background:rgba(0,229,255,0.1); padding:12px; border-radius:12px; margin-bottom:20px; border:1px dashed var(--primary); line-height:1.5;">
+                        <i class="fa-brands fa-whatsapp" style="font-size:16px; margin-right:5px;"></i> Please send your file in WhatsApp with your requirements after submitting.
+                    </p>
+                    <label style="font-size:12px; color:var(--text-sub);">Your Token (Save this)</label>
+                    <div class="token-box"><span id="form-token-display" class="token-val">Generating...</span><button class="btn-sm" style="background:none; border:none; color:var(--primary); font-size:18px;" onclick="copyDraftToken()"><i class="fa-regular fa-copy"></i></button></div>
+                    
+                    <div class="input-group"><input type="text" id="a-dept" placeholder=" "><label>Department</label></div>
+                    <div class="input-group"><input type="text" id="a-institute" placeholder=" " onkeyup="this.value = this.value.toUpperCase()"><label>Institution Name</label></div>
+                    <div class="input-group"><textarea id="a-address" placeholder=" " style="height:70px; padding-top:15px;"></textarea><label>Institution Address</label></div>
+                    <div class="input-group"><input type="text" id="a-coupon" placeholder=" " oninput="checkCoupon()"><label>Coupon Code</label><i id="c-valid" class="fa-solid fa-check-circle valid-icon"></i><i id="c-invalid" class="fa-solid fa-circle-xmark invalid-icon"></i></div>
+                    
+                    <div style="display:flex; gap:10px;">
+                        <div class="input-group" style="flex:1;"><input type="text" id="a-sec" placeholder=" "><label>Section</label></div>
+                        <div class="input-group" style="flex:1;"><select id="a-sem"><option value="" disabled selected></option><option value="1st">1st Sem</option><option value="2nd">2nd Sem</option><option value="3rd">3rd Sem</option><option value="4th">4th Sem</option><option value="5th">5th Sem</option><option value="6th">6th Sem</option><option value="7th">7th Sem</option><option value="8th">8th Sem</option></select><label>Semester</label></div>
+                    </div>
+                    <div class="input-group"><input type="number" id="a-roll" placeholder=" "><label>Roll No</label></div>
+                    <div class="input-group"><input type="password" id="a-phone" placeholder=" " style="padding-right:40px;"><label>WhatsApp No</label><i class="fa-solid fa-eye password-toggle" onclick="togglePass('a-phone', this)"></i></div>
+                    
+                    <!-- Urgency Tick -->
+                    <div id="urgent-btn" class="custom-tick-row" onclick="toggleUrgency()">
+                        <div class="tick-circle"><i class="fa-solid fa-check"></i></div>
+                        <div><span style="font-size:14px;">⚡ Urgent Order (3 Days)</span><p style="font-size:11px; color:var(--text-sub);">Standard takes 5 days.</p></div>
+                        <input type="checkbox" id="a-urgent" style="display:none;">
+                    </div>
+                    <div class="input-group" style="margin-bottom:0;"><input type="date" id="a-date" placeholder=" "><label>Required By</label></div>
+
+                    <div class="input-group"><select id="a-count" onchange="renderWorks()"><option value="1">1 Work</option><option value="2">2 Works</option><option value="3">3 Works</option></select><label>Total Works</label></div>
+                    <div id="work-area"></div>
+                    <button id="submit-order-btn" class="btn-main" onclick="submitOrder()">Submit Request</button>
+                </div>
+            </div>
+            
+            <!-- STATUS -->
+            <div id="v-status" class="view"><div class="input-group"><input type="text" id="s-search" placeholder=" " onkeyup="loadOrders('status')"><label>Search Token</label></div><div id="list-status"></div></div>
+            
+            <!-- PAYMENTS -->
+            <div id="v-payments" class="view"><div class="input-group"><select id="pay-filter" onchange="loadOrders('pay')"><option value="" disabled selected></option><option value="advance">Advance Payment</option><option value="final">Final Payment</option><option value="receipt">Receipts</option></select><label>View Type</label></div><div class="input-group"><input type="text" id="p-search" placeholder=" " onkeyup="loadOrders('pay')"><label>Enter Token</label></div><div id="list-pay"></div></div>
+            
+            <!-- REFUND -->
+            <div id="v-refund" class="view"><div class="card"><h3 style="color:var(--danger); margin-bottom:10px;">Cancellation</h3><div class="input-group"><input type="text" id="r-token" placeholder=" "><label>Token ID</label></div><div class="input-group"><input type="text" id="r-upi" placeholder=" "><label>UPI ID</label></div><div class="input-group"><select id="r-reason" onchange="toggleRefundInput()"><option>Mistake in Order</option><option>Cancelled by College</option><option value="Other">Other</option></select><label>Reason</label></div><div id="r-other-div" class="input-group" style="display:none;"><input type="text" id="r-other-val" placeholder=" "><label>Specify Reason</label></div><button class="btn-main" style="background:var(--danger)" onclick="reqRefund()">Request Refund</button></div></div>
+            
+            <!-- OFFERS -->
+            <div id="v-offers" class="view">
+                <h2 style="margin-bottom:20px;">Premium Offers</h2>
+                <div class="card" id="offer-login"><p style="font-size:14px; margin-bottom:15px;">Unlock exclusive rewards for ₹89 only!</p><div class="input-group"><input type="text" id="offer-token" placeholder=" "><label>Token ID</label></div><button class="btn-main" onclick="requestPremium()">Pay ₹89 to Unlock</button><p id="offer-status" style="margin-top:15px; color:var(--wait); text-align:center; display:none;"></p></div>
+                <div class="card" id="offer-game" style="display:none;"><div class="game-grid" id="game-board"></div>
+                    <div id="claim-area" style="display:none; margin-top:20px; border-top:1px dashed var(--border); padding-top:20px; text-align:center;">
+                        <h2 id="won-text" style="color:var(--primary); margin-bottom:10px;"></h2><div class="input-group"><input type="text" id="offer-upi" placeholder=" "><label>UPI ID</label></div><button class="btn-main" onclick="claimOffer()">Claim Reward</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- REWARDS -->
+            <div id="v-rewards" class="view"><h2 style="margin-bottom:20px;">Cashback</h2><div class="card"><div class="input-group"><input type="text" id="reward-token" placeholder=" "><label>Token ID</label></div><button class="btn-main" onclick="checkReward()">Check Reward</button><div id="scratch-wrapper" style="display:none; margin-top:20px;"><div class="scratch-container"><div class="scratch-result"><h2 id="won-amt"></h2><p>Cashback Won!</p></div><canvas id="scratch-canvas"></canvas></div><div id="claim-form" style="display:none; margin-top:15px;"><div class="input-group"><input type="text" id="reward-upi-scratch" placeholder=" "><label>Your UPI ID</label></div><button class="btn-main" style="background:var(--success);" onclick="claimScratchReward()">Claim</button></div></div></div></div>
+            
+            <!-- NOTIFS -->
+            <div id="v-notifications" class="view"><div id="notif-list"></div></div>
+            
+            <!-- UPDATES -->
+            <div id="v-updates" class="view"><h2 style="margin-bottom:15px;">Broadcasts</h2><div id="updates-list"></div></div>
+            
+            <!-- SETTINGS -->
+            <div id="v-settings" class="view">
+                <div class="card" style="text-align:center;"><div class="pfp-container"><img id="profile-img-display" src="" class="pfp-img"><div class="pfp-edit" onclick="document.getElementById('p-file').click()"><i class="fa-solid fa-camera"></i></div><input type="file" id="p-file" accept="image/*" hidden onchange="uploadPic(this)"></div><h3 id="p-name"></h3><p id="p-phone"></p></div>
+                <div class="card" onclick="nav('contact')" style="display:flex;align-items:center;gap:15px;cursor:pointer;margin-bottom:10px;"><i class="fa-solid fa-headset" style="color:var(--primary);font-size:20px;"></i><strong>Contact Support</strong></div>
+                <div class="card"><div style="display:flex; justify-content:space-between; margin-bottom:20px;"><span>Dark Theme</span><button class="btn-main" style="width:auto; padding:5px 15px; font-size:12px;" onclick="toggleTheme()">Toggle</button></div><h4 style="margin-bottom:15px;">Update Password</h4><div class="input-group"><input type="password" id="p-old" placeholder=" "><label>Old Password</label></div><div class="input-group"><input type="password" id="p-new" placeholder=" "><label>New Password</label></div><div class="input-group"><input type="password" id="p-confirm" placeholder=" "><label>Confirm Password</label></div><button class="btn-main" style="padding:12px;" onclick="changePass()">Save</button></div>
+                <button class="btn-main" style="background:transparent; color:var(--danger); border:1px solid var(--danger); box-shadow:none;" onclick="logout()">Lock App</button>
+                <div style="text-align:center; margin:20px 0; color:var(--text-sub); font-size:12px;"><p><strong>Jupi§o Ink Customer v1.0.0</strong></p><p>Creator: Tonmoy Kumar Deb</p><p>Made in Lachit Nagar, Guwahati</p></div>
+            </div>
+            
+            <!-- CONTACT -->
+            <div id="v-contact" class="view"><div style="margin-top: 20px;"><a href="https://chat.whatsapp.com/DCxWaLF0ahIB6FT7d71b6Z" target="_blank" class="card" style="display:flex;align-items:center;gap:15px;text-decoration:none;color:var(--text-main);"><i class="fa-brands fa-whatsapp" style="font-size:30px;color:#25D366;"></i><div><strong>Join WhatsApp Group</strong><br><small style="color:var(--text-sub)">Get Updates & Offers</small></div></a><a href="https://instagram.com/ALEXTECHNER" target="_blank" class="card" style="display:flex;align-items:center;gap:15px;text-decoration:none;color:var(--text-main);"><i class="fa-brands fa-instagram" style="font-size:24px;color:#E1306C;"></i><div><strong>Instagram</strong><br><small style="color:var(--text-sub)">@ALEXTECHNER</small></div></a><a href="https://wa.me/916901983382" target="_blank" class="card" style="display:flex;align-items:center;gap:15px;text-decoration:none;color:var(--text-main);"><i class="fa-brands fa-whatsapp" style="font-size:24px;color:#25D366;"></i><div><strong>WhatsApp Owner</strong><br><small style="color:var(--text-sub)">+91 6901983382</small></div></a><a href="mailto:softink.notes@gmail.com" class="card" style="display:flex;align-items:center;gap:15px;text-decoration:none;color:var(--text-main);"><i class="fa-regular fa-envelope" style="font-size:24px;color:#EA4335;"></i><div><strong>Email</strong><br><small style="color:var(--text-sub)">softink.notes@gmail.com</small></div></a></div></div>
+        </div>
+        
+        <nav class="bottom-nav">
+            <div class="nav-item active" onclick="nav('home', this)"><i class="fa-solid fa-house"></i><span>Home</span></div>
+            <div class="nav-item" onclick="nav('notifications', this)"><i class="fa-solid fa-bell"></i><span>Alerts</span><span id="notif-dot" class="notif-dot"></span></div>
+            <div class="nav-item" onclick="nav('updates', this)"><i class="fa-solid fa-bullhorn"></i><span>Updates</span><span id="update-dot" class="notif-dot"></span></div>
+            <div class="nav-item" onclick="nav('offers', this)"><i class="fa-solid fa-star"></i><span>Offers</span></div>
+            <div class="nav-item" onclick="nav('rewards', this)"><i class="fa-solid fa-gift"></i><span>Rewards</span></div>
+            <div class="nav-item" onclick="nav('settings', this)"><i class="fa-solid fa-user"></i><span>Profile</span></div>
+        </nav>
+    </div>
+
+    <!-- MODALS -->
+    <div id="receipt-modal" class="screen" style="background:rgba(0,0,0,0.8); z-index:200; justify-content:center; padding:20px;"><div class="card" style="width:100%; max-height:85vh; overflow-y:auto;"><div id="receipt-content"></div><button class="btn-main" onclick="document.getElementById('receipt-modal').classList.remove('active')">Close</button></div></div>
+    <div id="feedback-modal" class="screen" style="background:rgba(0,0,0,0.85); z-index:200; justify-content:center; padding:20px;"><div class="card" style="width:100%;"><h2 style="text-align:center; margin-bottom:10px;">Rate Order</h2><div class="stars" style="display:flex; justify-content:center; gap:10px; margin-bottom:20px;"><i class="fa-solid fa-star star" onclick="setRating(1)" style="font-size:30px; color:#ddd;"></i><i class="fa-solid fa-star star" onclick="setRating(2)" style="font-size:30px; color:#ddd;"></i><i class="fa-solid fa-star star" onclick="setRating(3)" style="font-size:30px; color:#ddd;"></i><i class="fa-solid fa-star star" onclick="setRating(4)" style="font-size:30px; color:#ddd;"></i><i class="fa-solid fa-star star" onclick="setRating(5)" style="font-size:30px; color:#ddd;"></i></div><div class="input-group"><textarea id="feedback-comment" placeholder="Write a comment..." style="width:100%; padding:15px; border-radius:15px; border:none; background:var(--input-bg);"></textarea></div><button class="btn-main" onclick="submitFeedback()">Submit Review</button><button class="btn-sm" style="margin-top:10px; width:100%; background:transparent;" onclick="document.getElementById('feedback-modal').classList.remove('active')">Cancel</button></div></div>
+    <div id="custom-alert-overlay"><div class="custom-alert-box"><h3 id="alert-title">Jupi§o</h3><p id="alert-msg" style="color:var(--text-sub); margin:10px 0 20px;">Msg</p><div id="alert-actions" class="alert-btn-row"><button class="btn-main" onclick="closeAlert()">OK</button></div></div></div>
+
+    <script>
+        let db=null, app={user:null, tokens:[], theme:'light', notifHistory:[], readUpdates:[], currentDraftToken:null, shopOpen:true, orderStatusCache:{}};
+        let appLoaded=false, currentRating=0, currentFeedbackToken=null, isRefreshing=false;
+        
+        const sndClick = new Audio('https://www.soundjay.com/buttons/sounds/button-16.mp3');
+        const sndMusic = new Audio('https://www.soundjay.com/free-music/midnight-ride-01a.mp3'); 
+        const notifSound=new Audio('https://www.soundjay.com/misc/sounds/writing-on-paper-1.mp3');
+
+        window.history.replaceState({view: 'home'}, null, "");
+        window.onpopstate = function(e) { if(e.state && e.state.view) manualNav(e.state.view); else manualNav('home'); };
+        document.addEventListener('click', () => sndClick.play().catch(()=>{}));
+        
+        setTimeout(()=>{if(!appLoaded){if(localStorage.getItem('user')) startApp(false); else { document.getElementById('error-msg').style.display='block'; document.getElementById('retry-btn').style.display='block'; }}}, 5000);
+
+        window.onload=()=>{
+            try{
+                // --- LOADING BAR ANIMATION ---
+let percent = 0;
+const bar = document.getElementById('progress-bar');
+const txt = document.getElementById('progress-text');
+
+const interval = setInterval(() => {
+    percent++;
+    if (bar && txt) {
+        bar.style.width = percent + '%';
+        txt.innerText = percent;
+    }
+    if (percent >= 100) clearInterval(interval);
+}, 20); // 20ms * 100 = 2000ms (Syncs with app start)
+                const config={apiKey:"AIzaSyAaVE3a0UCbvIVBmB_aFK0JV9hpCGNyHKY",authDomain:"jupiso-ink.firebaseapp.com",databaseURL:"https://jupiso-ink-default-rtdb.firebaseio.com",projectId:"jupiso-ink",storageBucket:"jupiso-ink.firebasestorage.app",messagingSenderId:"169259221620",appId:"1:169259221620:web:78022c0eb09fe505d78721",measurementId:"G-1Q2DGX0G9F"};
+                if(typeof firebase!=='undefined'){ firebase.initializeApp(config); db=firebase.database(); checkAppVersion(); }
+                
+                const u=localStorage.getItem('user'); app.user=u?JSON.parse(u):null;
+                app.tokens=JSON.parse(localStorage.getItem('tokens'))||[];
+                app.notifHistory=JSON.parse(localStorage.getItem('notifHistory'))||[];
+                app.readUpdates=JSON.parse(localStorage.getItem('readUpdates'))||[]; 
+                
+                // DEFAULT TO DARK MODE
+                app.theme = localStorage.getItem('theme') || 'dark';
+                if(app.theme === 'dark') document.body.classList.add('dark-mode');
+                else document.body.classList.remove('dark-mode');
+
+                setTimeout(()=>startApp(true),2500);
+            }catch(e){startApp(false);}
+        };
+        function checkReward() {
+  if (!db) return showAlert("Offline", "Internet Required");
+  
+  const t = document.getElementById('reward-token').value.trim();
+  if (!t) return showAlert("Error", "Enter Token");
+  
+  // 1. Check if Token belongs to User
+  if (!app.tokens.includes(t)) return showAlert("Invalid", "Token not yours");
+  
+  db.ref('orders/' + t).once('value', s => {
+    const o = s.val();
+    // 2. Check if Work Started
+    if (!['In Progress', 'Completed', 'Delivered', 'Cashback Paid'].includes(o.status)) {
+      return showAlert("Wait", "Reward available after work starts (In Progress).");
+    }
+    // 3. Check if Already Claimed in Order Data
+    if (o.rewardClaimed === true) {
+      return showAlert("Info", "Reward already claimed/used.");
+    }
+    
+    // 4. Check for Duplicate/Pending Request in Rewards Node
+    db.ref('rewards/' + t).once('value', r => {
+      if (r.exists()) {
+        showAlert("Pending", "You have already scratched this. Claim is pending approval.");
+      } else {
+        // ALL CHECKS PASSED -> SHOW SCRATCH CARD
+        app.activeRewardToken = t;
+        // Random Amount between ₹2 and ₹7
+        app.wonAmount = Math.floor(Math.random() * (7 - 2 + 1)) + 2;
+        document.getElementById('won-amt').innerText = "₹" + app.wonAmount;
+        initScratchCard();
+      }
+    });
+  });
+}
+        function checkAppVersion() {
+            const MY_VERSION = 1; // UPDATE THIS when you release new code
+            if (!db) return;
+            db.ref('adminSettings/minAppVersion').on('value', s => {
+                const requiredVer = s.val() || 0;
+                if (MY_VERSION < requiredVer) {
+                    document.getElementById('update-screen').classList.add('active');
+                    // Lock other interactions
+                    document.getElementById('app').style.display = 'none';
+                    document.getElementById('auth').style.display = 'none';
+                } else {
+                    document.getElementById('update-screen').classList.remove('active');
+                    document.getElementById('app').style.display = 'flex';
+                }
+            });
+        }
+
+        function startApp(success){
+            appLoaded=true; 
+            // Correctly remove Splash
+            const splash = document.getElementById('splash');
+            if(splash) splash.classList.remove('active');
+
+            if("Notification" in window) Notification.requestPermission();
+            
+            // Check User Data Integrity
+            if(app.user && app.user.name && app.user.pass){
+                document.getElementById('lock-name').innerText=`Hi, ${app.user.name}`;
+                document.getElementById('lock-screen').classList.add('active');
+                if(success && db) { checkUpdates(); listenToShopStatus(); monitorOrders(); }
+                updateHeader('home');
+            } else {
+                // If no user, show Auth screen cleanly
+                document.getElementById('auth').classList.add('active');
+            }
+        }
+
+        // --- NOTIFICATION ENGINE ---
+        function monitorOrders() {
+    if (!app.tokens.length) return;
+    
+    app.tokens.forEach(token => {
+        db.ref('orders/' + token).on('value', snapshot => {
+            const order = snapshot.val();
+            if (!order) return;
+            
+            const lastStatus = app.orderStatusCache[token];
+            // Get Owner Name (defaults to 'Owner' if missing)
+            const owner = order.takenBy || 'Owner';
+            
+            // CHECK FOR STATUS CHANGE
+            if (lastStatus && lastStatus !== order.status) {
+                let title = "Status Update";
+                let msg = `Order #${token} is now ${order.status}`;
+                
+                // --- 1. WORK REJECTED ---
+                if (order.status === 'Rejected') {
+                    title = "Order Declined";
+                    msg = `Your order was declined by ${owner}. Please check details or contact support.`;
+                }
+                // --- 2. ORDER ACCEPTED (Two Cases) ---
+                else if (order.status === 'Accepted') {
+                    if (order.total > 0) {
+                        // Case A: Price IS Set
+                        title = "Price Updated";
+                        msg = `Price set by ${owner}. Total: ₹${order.total}. Please pay Advance (₹${order.advance}) to start work.`;
+                    } else {
+                        // Case B: Price NOT Set
+                        title = "Order Accepted";
+                        msg = `Order accepted by ${owner}. Waiting for price calculation...`;
+                    }
+                }
+                // --- 3. IN PROGRESS (Work Started) ---
+                else if (order.status === 'In Progress') {
+                    title = "Work Started";
+                    msg = `Work has been started by ${owner}. You will be notified when completed.`;
+                }
+                // --- 4. COMPLETED (Work Done) ---
+                else if (order.status === 'Completed') {
+                    title = "Work Done";
+                    msg = `Work completed by ${owner}! Please pay Final Bill (₹${order.final}) to get delivery.`;
+                }
+                // --- 5. DELIVERED ---
+                else if (order.status === 'Delivered') {
+                    title = "Order Delivered";
+                    msg = `Order delivered by ${owner}. Thank you for choosing Jupi§o!`;
+                }
+                // --- 6. REFUND ACCEPTED ---
+                else if (order.status === 'Refunded') {
+                    title = "Refund Approved";
+                    msg = `Refund request accepted by ${owner}. Amount will be sent to your UPI shortly.`;
+                }
+                // --- 7. REFUND REJECTED ---
+                else if (order.status === 'Refund Rejected') {
+                    title = "Refund Declined";
+                    msg = `Your refund request was declined by ${owner}. Work will continue as scheduled.`;
+                }
+                // --- 8. CASHBACK ---
+                else if (order.status === 'Cashback Paid') {
+                    title = "Cashback Received";
+                    msg = `Cashback reward sent to your UPI by ${owner}. Check your bank app.`;
+                }
+                
+                // Trigger Notification
+                pushNotify(token, msg, title);
+            }
+            
+            // --- PRIZE CHECK ---
+            if (order.prizeWon && (!app.orderStatusCache[token + '_prize'])) {
+                app.orderStatusCache[token + '_prize'] = true;
+                pushNotify(token, `You won ${order.prizeWon}! Go to Offers tab to claim.`, "Prize Unlocked");
+            }
+            
+            // Update Local Cache
+            app.orderStatusCache[token] = order.status;
+        });
+    });
+}
+
+        function pushNotify(token, msg, title) {
+            const isDuplicate = app.notifHistory.some(n => n.token === token && n.msg === msg);
+            if(isDuplicate) return; 
+
+            app.notifHistory.unshift({ token: token, status: 'Alert', msg: msg, title: title, time: new Date().toLocaleString(), read: false });
+            // Clean History (Keep last 50)
+            if(app.notifHistory.length > 50) app.notifHistory = app.notifHistory.slice(0, 50);
+
+            localStorage.setItem('notifHistory', JSON.stringify(app.notifHistory));
+            updateRedDot(); notifSound.play().catch(()=>{});
+            
+            if(Notification.permission==="granted") new Notification(title, { body: msg, icon: 'https://img.icons8.com/color/48/fountain-pen.png' });
+            if(document.getElementById('v-notifications').classList.contains('active-view')) renderNotifications();
+        }
+
+        // --- REFRESH LOGIC ---
+        function refreshNotifs() {
+            if (isRefreshing) return; 
+            isRefreshing = true;
+            const overlay = document.getElementById('refresh-overlay');
+            const icon = document.getElementById('refresh-icon');
+
+            if(overlay) { overlay.style.display = 'flex'; void overlay.offsetWidth; overlay.style.opacity = '1'; }
+            if(icon) icon.classList.add('fa-spin-custom');
+            const sndRefresh = new Audio('https://www.soundjay.com/buttons/sounds/button-3.mp3');
+            sndRefresh.play().catch(()=>{});
+
+            if(db) { checkUpdates(); markAllRead(); if(app.tokens.length > 0) { app.tokens.forEach(t => { db.ref('orders/'+t).once('value', s => { if(s.val()) app.orderStatusCache[t] = s.val().status; }); }); } }
+
+            setTimeout(() => {
+                try { renderNotifications(); markAllRead(); } catch(e) {} finally {
+                    if(overlay) { overlay.style.opacity = '0'; setTimeout(() => { overlay.style.display = 'none'; }, 300); }
+                    if(icon) icon.classList.remove('fa-spin-custom');
+                    isRefreshing = false;
+                }
+            }, 1200); 
+        }
+
+        // --- URGENCY LOGIC ---
+        function toggleUrgency() {
+            const btn = document.getElementById('urgent-btn');
+            const checkbox = document.getElementById('a-urgent');
+            if(!btn || !checkbox) return;
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) btn.classList.add('active'); else btn.classList.remove('active');
+            updateDateLogic();
+        }
+
+        function updateDateLogic() {
+            const isUrgent = document.getElementById('a-urgent').checked;
+            const daysToAdd = isUrgent ? 3 : 5;
+            const date = new Date(); date.setDate(date.getDate() + daysToAdd);
+            const minStr = date.toISOString().split('T')[0];
+            const input = document.getElementById('a-date');
+            input.min = minStr;
+            if(input.value && input.value < minStr) input.value = minStr;
+        }
+
+        // --- SUBMIT ORDER ---
+        function submitOrder(){ 
+            if(!db)return showAlert("Offline","Internet Required");
+            if(!app.shopOpen) return showAlert("Closed", "Shop is currently closed.");
+
+            const dept=document.getElementById('a-dept').value.trim();
+            const roll=document.getElementById('a-roll').value.trim();
+            const phone=document.getElementById('a-phone').value.trim();
+            const sem=document.getElementById('a-sem').value; 
+            const inst = document.getElementById('a-institute').value.trim();
+            const addr = document.getElementById('a-address').value.trim();
+            
+            if(!dept||!roll||!phone||!sem)return showAlert("Missing","Fill Details"); 
+            if(!inst||!addr)return showAlert("Missing","Fill Institute & Address");
+            if(phone.length!==10 || roll.length!==10)return showAlert("Invalid","Roll & WhatsApp must be 10 digits"); 
+            
+            const reqDate = document.getElementById('a-date').value;
+            if(!reqDate) return showAlert("Missing", "Select Required Date");
+            const deadlineTs = new Date(reqDate).getTime();
+            
+            const workItems = document.querySelectorAll('.work-item');
+            if(workItems.length === 0) { renderWorks(); return showAlert("Error", "Please fill work details"); }
+
+            let works=[]; 
+            let errorMsg = "";
+            
+            workItems.forEach((item, index) => {
+               const sub = item.querySelector('.w-sub').value.trim();
+               if(!sub) { errorMsg = "Subject missing"; return; }
+               const fmt = item.querySelector('.w-fmt').value;
+               let pt = "N/A";
+               if(fmt === 'Printed') pt = item.querySelector('.w-print-type').value;
+
+               works.push({
+                   subject: sub,
+                   type: item.querySelector('.w-type').value,
+                   format: fmt,
+                   printType: pt,
+                   binding: item.querySelector('.w-binding').value,
+                   pageNo: item.querySelector('.w-pg').value,
+                   border: item.querySelector('.w-brd').value
+               });
+            });
+
+            if(errorMsg) return showAlert("Missing", errorMsg);
+
+            const token=app.currentDraftToken;
+            const order={
+                token,
+                customer:app.user.name,
+                dept, phone, section:document.getElementById('a-sec').value, semester:sem, roll, works,
+                institution: inst, address: addr,
+                status:'Requested', timestamp:Date.now(),
+                paidAdv:false, paidFinal:false, basePrice:0, extraCharges:0, total:0, advance:0, final:0,
+                rewardClaimed:false,
+                coupon:document.getElementById('a-coupon').value||'',
+                deadline: deadlineTs,
+                isUrgent: document.getElementById('a-urgent').checked
+            }; 
+            
+            db.ref('orders/'+token).set(order).then(()=>{ 
+                app.tokens.push(token); 
+                localStorage.setItem('tokens',JSON.stringify(app.tokens)); 
+                if(app.user.phone) { db.ref('users/'+app.user.phone+'/tokens').push(token); } 
+                pushNotify(token, "Order placed successfully. Waiting for acceptance.", "Order Requested");
+                showTokenSuccess(token); 
+            }); 
+        }
+function listenToOffer(t) {
+    if(app.activeOfferToken === t && document.getElementById('offer-game').style.display === 'block') return;
+    app.activeOfferToken = t;
+
+    db.ref('offers/'+t).on('value', s => { 
+        const d = s.val();
+        if(!d) return;
+
+        // SCENARIO 1: Owner just Unlocked it -> Show Game
+        if(d.status === 'Unlocked') { 
+            closeAlert(); 
+            document.getElementById('offer-login').style.display='none'; 
+            document.getElementById('offer-game').style.display='block';
+
+            // If prize exists (glitch recovery), show result. Else show Game.
+            if(d.prize) {
+                showClaimScreen(d.prize, "Claimed");
+            } else {
+                if(document.getElementById('game-board').innerHTML === '') {
+                    pushNotify(t, "Premium Unlocked! Tap a card to win.", "Premium");
+                    sndMusic.play(); 
+                    startGame();
+                }
+            }
+        } 
+        // SCENARIO 2: User played and Claimed/Paid -> Hide Game, Show Result
+        else if (d.status === 'Claimed' || d.status === 'Paid') {
+            document.getElementById('offer-login').style.display='none'; 
+            document.getElementById('offer-game').style.display='block';
+            
+            showClaimScreen(d.prize, d.status);
+        }
+    });
+}
+
+// Helper to show the "Result Screen" instead of "Game Grid"
+function showClaimScreen(prizeName, status) {
+    document.getElementById('game-board').innerHTML = ``; // Clear cards
+    document.getElementById('won-text').innerText = prizeName;
+    document.getElementById('claim-area').style.display = 'block';
+
+    const claimMsg = document.getElementById('claim-status-msg') || document.createElement('p');
+    claimMsg.id = 'claim-status-msg';
+    claimMsg.style.fontWeight = 'bold';
+    claimMsg.style.marginTop = '10px';
+    document.getElementById('claim-area').appendChild(claimMsg);
+
+    if(status === 'Paid') {
+        claimMsg.style.color = 'var(--success)';
+        claimMsg.innerText = "✅ Reward Sent by Owner";
+        // Hide inputs/buttons since it's done
+        document.querySelector('#claim-area .input-group').style.display = 'none';
+        document.querySelector('#claim-area button').style.display = 'none';
+        document.querySelector('#claim-area p').style.display = 'none'; // Hide warning
+    } else {
+        claimMsg.style.color = 'var(--text-sub)';
+        claimMsg.innerText = "⏳ Claim Submitted. Waiting for Owner.";
+    }
+}
+        // --- NAVIGATION & SHOP STATUS ---
+        function listenToShopStatus() { db.ref('adminSettings/appActive').on('value', s => { app.shopOpen = (s.val() === null || s.val() === true); checkShopUI(); }); }
+        function checkShopUI() {
+            const banner = document.getElementById('shop-closed-banner'), form = document.getElementById('apply-card'), homeBtn = document.getElementById('btn-new-order');
+            if(!homeBtn) return;
+            if(!app.shopOpen) {
+                banner.style.display = 'block'; form.style.opacity = '0.5'; form.style.pointerEvents = 'none';
+                homeBtn.classList.add('disabled'); homeBtn.style.opacity = '0.5'; homeBtn.style.filter = 'grayscale(1)';
+                homeBtn.onclick = () => showAlert("Shop Closed", "We are currently not accepting new orders.");
+            } else {
+                banner.style.display = 'none'; form.style.opacity = '1'; form.style.pointerEvents = 'auto';
+                homeBtn.classList.remove('disabled'); homeBtn.style.opacity = '1'; homeBtn.style.filter = 'none';
+                homeBtn.onclick = () => nav('apply');
+            }
+        }
+
+        function nav(v,el){ 
+            stopAllSounds(); 
+            if(v === 'apply') { 
+                if(!app.shopOpen) { showAlert("Shop Closed", "We are currently not accepting new orders."); return; } 
+                generateDraftToken(); updateDateLogic(); renderWorks(); checkShopUI(); 
+            }
+            history.pushState({view: v}, null, ""); 
+            document.querySelectorAll('.view').forEach(x=>x.classList.remove('active-view')); 
+            document.getElementById('v-'+v).classList.add('active-view'); 
+            updateHeader(v); 
+            if(el){document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));el.classList.add('active');} 
+            if(v==='status')loadOrders('status'); if(v==='payments'){document.getElementById('list-pay').innerHTML=`<p class="privacy-msg">Enter Token ID.</p>`;document.getElementById('p-search').value='';}
+            if(v==='notifications'){renderNotifications();markAllRead();} if(v==='rewards'){document.getElementById('scratch-wrapper').style.display='none';document.getElementById('reward-token').value='';} if(v==='offers'){checkOfferStatus();} if(v==='updates'){ renderUpdates(); } 
+        }
+
+        // --- OTHER LOGIC (Standard) ---
+        function renderNotifications(){ 
+            const l=document.getElementById('notif-list'); l.innerHTML=''; 
+            app.notifHistory.sort((a,b) => new Date(b.time) - new Date(a.time)); 
+            if(!app.notifHistory.length){ l.innerHTML='<div style="text-align:center; margin-top:50px; opacity:0.5;"><p>No alerts yet.</p></div>'; return; } 
+            app.notifHistory.forEach(n=>{ 
+                let c = 'var(--primary)', icon = '<i class="fa-solid fa-circle-info"></i>'; 
+                if(n.msg.includes('Completed') || n.msg.includes('Delivered')) { c='var(--success)'; icon='<i class="fa-solid fa-check-circle"></i>'; } 
+                if(n.msg.includes('Cashback') || n.msg.includes('Prize')) { c='var(--warning)'; icon='<i class="fa-solid fa-trophy"></i>'; } 
+                if(n.msg.includes('Rejected')) { c='var(--danger)'; icon='<i class="fa-solid fa-circle-xmark"></i>'; } 
+                l.innerHTML += `<div class="card" style="padding:15px; border-left:5px solid ${c}; opacity:${n.read?'0.7':'1'};"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><div style="display:flex; align-items:center; gap:8px;"><div style="color:${c}; font-size:16px;">${icon}</div><strong>${n.title}</strong></div><span style="background:var(--input-bg); font-size:11px; padding:4px 8px; border-radius:8px;">#${n.token}</span></div><div style="font-size:13px; color:var(--text-sub); margin-bottom:10px;">${n.msg}</div><div style="display:flex; justify-content:space-between; font-size:11px; color:var(--wait);"><span>${n.time}</span>${!n.read ? '<span style="color:red;">NEW</span>' : ''}</div></div>`; 
+            }); 
+        }
+
+        function getStepperHTML(currentStatus) {
+            const steps = [ { label: 'Requested', icon: 'fa-paper-plane' }, { label: 'Accepted', icon: 'fa-thumbs-up' }, { label: 'In Progress', icon: 'fa-gears' }, { label: 'Completed', icon: 'fa-check-circle' }, { label: 'Delivered', icon: 'fa-box-open' } ];
+            const statusMap = { 'Requested': 0, 'Accepted': 1, 'In Progress': 2, 'Completed': 3, 'Delivered': 4, 'Cashback Paid': 4 };
+            if(currentStatus === 'Rejected') return `<div style="color:var(--danger); font-weight:bold; text-align:center; padding:10px; background:#ffebeb; border-radius:10px;"><i class="fa-solid fa-circle-xmark"></i> Order Rejected</div>`;
+            if(currentStatus === 'Refunded') return `<div style="color:var(--danger); font-weight:bold; text-align:center; padding:10px; background:#ffebeb; border-radius:10px;"><i class="fa-solid fa-rotate-left"></i> Order Refunded</div>`;
+            const currentIndex = statusMap[currentStatus] !== undefined ? statusMap[currentStatus] : 0;
+            let html = '<div class="stepper">';
+            steps.forEach((step, index) => {
+                let stateClass = ''; if (index < currentIndex) stateClass = 'completed'; else if (index === currentIndex) stateClass = 'active';
+                html += `<div class="step ${stateClass}"><div class="step-line"></div><div class="step-icon"><i class="fa-solid ${step.icon}"></i></div><div class="step-content"><div class="step-title">${step.label}</div>${index === currentIndex ? '<div class="step-desc">Current Status</div>' : ''}</div></div>`;
+            });
+            return html + '</div>';
+        }
+
+        function loadOrders(view){
+            if(!db)return showAlert("Offline","Check Internet");const l=document.getElementById(view==='status'?'list-status':'list-pay'),s=(view==='pay'?document.getElementById('p-search').value:document.getElementById('s-search').value);if(s.length<5){l.innerHTML=`<p class="privacy-msg">Enter Token ID.</p>`;return;}l.innerHTML='<div style="text-align:center;padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i></div>';const f=view==='pay'?document.getElementById('pay-filter').value:'all';let tks=[];
+            setTimeout(()=>{ Promise.all(app.tokens.map(t=>db.ref('orders/'+t).once('value'))).then(snaps=>{ l.innerHTML=''; const d=[]; snaps.forEach(x=>{if(x.val())d.push(x.val());});d.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)); d.forEach(x=>{ tks.push(x.token); if(s&&!x.token.includes(s))return;let sh=false;if(view==='status')sh=true;if(view==='pay'){if(f==='advance'&&x.status==='Accepted'&&x.basePrice>0&&!x.paidAdv)sh=true;else if(f==='final'&&x.status==='Completed'&&!x.paidFinal)sh=true;else if(f==='receipt'){ if((x.paidAdv && ['In Progress','Completed','Delivered','Cashback Paid'].includes(x.status)) || (x.paidFinal && x.status==='Delivered')) sh=true; }} if(sh){ let b='',p='';if(x.status==='Requested'||x.total==0)p=`<div class="pay-highlight" style="color:var(--wait);text-align:left;">Waiting Price...</div>`;else p=`<div class="price-table"><div class="price-row"><span>Base</span><span>₹${x.basePrice}</span></div><div class="price-row"><span>Charges (Extra Resources)</span><span>₹${x.extraCharges}</span></div><div class="price-row price-total"><span>Total</span><span>₹${x.total}</span></div></div>`; if(view==='pay'){if(f==='receipt')b=`<button class="btn-main" style="background:var(--wait);padding:8px;font-size:12px;width:auto;" onclick="showReceipt('${x.token}')"><i class="fa-solid fa-receipt"></i> Receipt</button>`;else {const amt=f==='advance'?x.advance:x.final;if(amt>0){p+=`<div class="pay-highlight">Pay ${f}: ₹${amt}</div>`;b=`<button class="btn-main" style="padding:10px;font-size:12px;width:auto;" onclick="payAndShare('${x.token}','${f}',${amt})">Pay & Share</button>`;}}} else if(view==='status') { b=`<button class="btn-main" style="background:var(--wait);padding:8px;font-size:12px;width:auto;" onclick="showReceipt('${x.token}')"><i class="fa-solid fa-receipt"></i></button>`; if(x.status === 'Delivered' && !x.feedback) { b += `<button class="btn-main" style="background:var(--primary);color:white;padding:8px;font-size:12px;width:auto;margin-left:10px;" onclick="openFeedback('${x.token}')">⭐ Rate Order</button>`; } } let c=x.status==='Requested'?'var(--wait)':(x.status==='Accepted'?'var(--info)':(x.status==='Completed'?'var(--success)':'var(--warning)'));if(x.status==='Rejected'||x.status==='Refunded')c='var(--danger)'; const stepper = getStepperHTML(x.status); const dt = new Date(x.timestamp).toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'}); l.innerHTML+=`<div class="card" style="padding:20px;border-left:4px solid ${c};"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><div><strong style="font-size:18px;color:var(--primary);">#${x.token}</strong><div style="font-size:12px;color:var(--text-sub);">${dt}</div></div>${b}</div><div style="background:var(--input-bg);padding:10px;border-radius:10px;margin-bottom:10px;"><p style="font-size:13px;color:var(--text-main);font-weight:600;"><i class="fa-solid fa-layer-group" style="color:var(--primary)"></i> ${x.works.map(w=>w.subject).join(', ')}</p></div>${stepper}</div>`; } }); app.tokens=tks;localStorage.setItem('tokens',JSON.stringify(app.tokens));if(!l.innerHTML)l.innerHTML=`<p style="text-align:center;color:var(--text-sub);">No records.</p>`; }); },500);
+        }
+
+        // --- SHOW RECEIPT (With Institution) ---
+        function showReceipt(token){
+            if(!db)return showAlert("Offline","Check Internet");app.currentReceiptToken=token;
+            db.ref('orders/'+token).once('value',s=>{
+                const d=s.val();
+                let couponHtml = d.coupon ? `<div class="price-row" style="color:var(--success);"><span>Coupon Applied</span><span>${d.coupon}</span></div>` : '';
+                let offerHtml = d.prizeWon ? `<div class="price-row" style="color:var(--primary);"><span>Premium Win</span><span>${d.prizeWon}</span></div>` : '';
+                let cashbackHtml = d.status === 'Cashback Paid' ? `<div class="price-row" style="color:var(--accent);"><span>Cashback Sent</span><span>Yes</span></div>` : '';
+                let refundHtml = d.status === 'Refunded' ? `<div class="price-row" style="color:var(--danger);"><span>Refund Processed</span><span>Yes</span></div>` : '';
+
+                let worksHtml = d.works.map(w => {
+                    let ptText = w.format === 'Printed' ? ` (${w.printType})` : '';
+                    return `<div><strong>${w.subject}</strong><br><small style="color:gray;">${w.type} | ${w.format}${ptText}</small><br><small style="color:gray;">Binding: ${w.binding} | Border: ${w.border} | Page: ${w.pageNo}</small></div><hr style="margin:5px 0; border-top:1px dashed #eee;">`;
+                }).join('');
+
+                document.getElementById('receipt-content').innerHTML=`
+                <div id="receipt-text">
+                    <h2 style="text-align:center;color:var(--primary)">Jupi§o Ink</h2>
+                    <p style="text-align:center;font-size:12px;">Token: ${d.token}</p>
+                    <hr style="margin:10px 0;border:0;border-top:1px dashed #ccc;">
+                    <!-- INSTITUTION BLOCK -->
+                    <div style="background:var(--input-bg); padding:10px; border-radius:10px; margin:10px 0; text-align:left;">
+                        <p style="font-size:11px; font-weight:bold; color:var(--primary);">INSTITUTION</p>
+                        <p style="font-size:13px; margin-bottom:5px;">${d.institution || 'N/A'}</p>
+                        <p style="font-size:11px; font-weight:bold; color:var(--primary);">ADDRESS</p>
+                        <p style="font-size:13px;">${d.address || 'N/A'}</p>
+                    </div>
+                    <p style="font-size:14px;"><strong>Customer:</strong> ${d.customer}</p>
+                    <p style="font-size:14px;"><strong>Phone:</strong> ${d.phone}</p>
+                    <p style="font-size:14px;"><strong>Dept:</strong> ${d.dept} | <strong>Sem:</strong> ${d.semester}</p>
+                    <p style="font-size:14px;"><strong>Roll:</strong> ${d.roll} | <strong>Sec:</strong> ${d.section || '-'}</p>
+                    <hr style="margin:10px 0;border:0;border-top:1px dashed #ccc;">
+                    <div style="font-size:14px;line-height:1.6;">${worksHtml}</div>
+                    <div class="price-table">
+                        <div class="price-row price-total"><span>Total Charges</span><span>₹${d.total}</span></div>
+                        <div class="price-row" style="font-size:11px;color:gray;">(Includes Base + Extra Resources)</div>
+                        ${couponHtml}${offerHtml}${cashbackHtml}${refundHtml}
+                        <div class="price-row" style="color:var(--success);"><span>Paid Adv</span><span>₹${d.paidAdv?d.advance:0}</span></div>
+                        <div class="price-row" style="color:var(--success);"><span>Paid Final</span><span>₹${d.paidFinal?d.final:0}</span></div>
+                    </div>
+                </div>`;
+                document.getElementById('receipt-modal').classList.add('active');
+            });
+        }
+
+        // --- STANDARD FUNCTIONS (Restored Logic) ---
+        function togglePass(id, el){ const inp = document.getElementById(id); if(inp.type === 'password'){ inp.type = 'text'; el.classList.remove('fa-eye'); el.classList.add('fa-eye-slash'); } else { inp.type = 'password'; el.classList.remove('fa-eye-slash'); el.classList.add('fa-eye'); } }
+        function uploadPic(input){ if(input.files && input.files[0]){ const reader = new FileReader(); reader.onload = function(e){ const base64 = e.target.result; app.user.pfp = base64; localStorage.setItem('user', JSON.stringify(app.user)); if(app.user.phone) db.ref('users/'+app.user.phone).update({pfp: base64}); document.getElementById('profile-img-display').src = base64; }; reader.readAsDataURL(input.files[0]); } }
+        function register(){ if(!db) return showAlert("Offline", "Internet Needed"); const n=document.getElementById('auth-name').value.trim(); const ph=document.getElementById('auth-phone').value.trim(); const p=document.getElementById('auth-pass').value; if(!n||!p||!ph) return showAlert("Error","Fill all fields"); if(ph.length < 10) return showAlert("Error", "Invalid Phone"); db.ref('users/'+ph).once('value', s => { const existing = s.val(); if(existing){ if(existing.pass === p){ app.user = {name: existing.name, phone: ph, pass: p, pfp: existing.pfp || ''}; const dbTokens = existing.tokens ? Object.values(existing.tokens) : []; app.tokens = [...new Set([...app.tokens, ...dbTokens])]; localStorage.setItem('user', JSON.stringify(app.user)); localStorage.setItem('tokens', JSON.stringify(app.tokens)); document.getElementById('auth').classList.remove('active'); init(); showAlert("Welcome Back", "Data synced from cloud."); } else { showAlert("Error", "Wrong Password for this Phone."); } } else { app.user = {name: n, phone: ph, pass: p, pfp: ''}; db.ref('users/'+ph).set({ name: n, pass: p, joined: new Date().toLocaleString() }).then(() => { localStorage.setItem('user', JSON.stringify(app.user)); document.getElementById('auth').classList.remove('active'); init(); }); } }); }
+        function unlock(){if(document.getElementById('unlock-pass').value===app.user.pass){document.getElementById('lock-screen').classList.remove('active');init();}else showAlert("Access Denied","Wrong Pass");}
+        function resetApp(){showConfirm("Forgot Password? Resetting app data locally. (Cloud data remains)",()=>{localStorage.clear();location.reload();});}
+        function logout(){location.reload();}
+        function init(){ document.getElementById('app').classList.add('active'); document.getElementById('greet-txt').innerText=`Hello ${app.user.name}`; document.getElementById('p-name').innerText=app.user.name; if(app.user.phone) document.getElementById('p-phone').innerText=app.user.phone; if(app.user.pfp) document.getElementById('profile-img-display').src = app.user.pfp; }
+        function updateHeader(v) { const titles={home:'Jupi§o',apply:'New Order',status:'Tracking',payments:'Payments',refund:'Refund',settings:'Profile',notifications:'Alerts',rewards:'Rewards',offers:'Premium Offers',contact:'Support',updates:'Broadcasts'}; if(document.getElementById('header-txt')) document.getElementById('header-txt').innerText=titles[v]; if(document.getElementById('back-btn')) document.getElementById('back-btn').style.display=['home','notifications','settings','rewards','offers','updates'].includes(v)?'none':'flex'; const refBtn = document.getElementById('refresh-btn'); if(refBtn) refBtn.style.display = (v === 'notifications') ? 'flex' : 'none'; }
+        function stopAllSounds() { sndMusic.pause(); sndMusic.currentTime=0; }
+        function toggleTheme(){document.body.classList.toggle('dark-mode');app.theme=document.body.classList.contains('dark-mode')?'dark':'light';localStorage.setItem('theme',app.theme);}
+        function changePass(){ if(!db) return showAlert("Offline", "Internet Required"); const oldP = document.getElementById('p-old').value; const newP = document.getElementById('p-new').value; const confP = document.getElementById('p-confirm').value; if(oldP !== app.user.pass) return showAlert("Error", "Old Password Wrong"); if(newP.length < 4) return showAlert("Error", "Password too short"); if(newP !== confP) return showAlert("Error", "Passwords do not match"); app.user.pass = newP; localStorage.setItem('user', JSON.stringify(app.user)); if(app.user.phone) { db.ref('users/'+app.user.phone).update({pass: newP}); } showAlert("Success", "Password Updated Everywhere"); document.getElementById('p-old').value = ''; document.getElementById('p-new').value = ''; document.getElementById('p-confirm').value = ''; }
+        function generateDraftToken(){app.currentDraftToken="JP"+Math.floor(100000+Math.random()*900000);document.getElementById('form-token-display').innerText=app.currentDraftToken;}
+        function renderWorks(){const n=document.getElementById('a-count').value,d=document.getElementById('work-area');d.innerHTML='';for(let i=1;i<=n;i++) {d.innerHTML+=`<div class="work-item"><strong style="color:var(--primary);">WORK ${i}</strong><div class="input-group" style="margin-top:10px;"><input type="text" class="w-sub" placeholder=" "><label>Subject</label></div><div style="display:flex;gap:10px;"><div class="input-group" style="flex:1;"><select class="w-type"><option>Assignment</option><option>Practical</option></select><label>Type</label></div><div class="input-group" style="flex:1;"><select class="w-fmt" onchange="togglePrintOption(this)"><option>Handwritten</option><option>Printed</option></select><label>Format</label></div></div><div class="print-type-div" style="display:none; margin-bottom:10px;"><div class="input-group"><select class="w-print-type"><option value="B&W">Black & White</option><option value="Color">Color</option></select><label>Print Mode</label></div></div><div class="input-group"><select class="w-binding"><option value="None">None</option><option value="Staple">Staple</option><option value="Spiral">Spiral Binding</option><option value="Stick">Stick File</option></select><label>Binding</label></div><div style="display:flex;gap:10px;"><div class="input-group" style="flex:1;"><select class="w-pg"><option value="no">No</option><option value="yes">Yes</option></select><label>Page No</label></div><div class="input-group" style="flex:1;"><select class="w-brd"><option value="none">None</option><option value="tl">Top & Left</option><option value="all">All Sides</option></select><label>Border</label></div></div></div>`;}}
+        function togglePrintOption(selectEl) { const printDiv = selectEl.parentElement.parentElement.parentElement.querySelector('.print-type-div'); if(selectEl.value === 'Printed') printDiv.style.display = 'block'; else printDiv.style.display = 'none'; }
+        
+        function checkUpdates() { db.ref('broadcasts').on('value', s => { const data = s.val(); if(!data) return; const keys = Object.keys(data); const hasUnread = keys.some(k => !app.readUpdates.includes(k)); document.getElementById('update-dot').style.display = hasUnread ? 'block' : 'none'; if(hasUnread) notifSound.play().catch(()=>{}); }); }
+        function renderUpdates() { const l = document.getElementById('updates-list'); l.innerHTML = '<div style="text-align:center; padding:20px;"><i class="fa-solid fa-spinner fa-spin"></i></div>'; db.ref('broadcasts').once('value', s => { l.innerHTML = ''; const data = s.val(); if(!data) { l.innerHTML = "<p style='text-align:center; color:gray;'>No updates.</p>"; return; } const sorted = Object.entries(data).sort((a,b) => b[1].timestamp - a[1].timestamp); sorted.forEach(([key, item]) => { const isRead = app.readUpdates.includes(key); const badge = !isRead ? `<small style="color:white; background:var(--danger); padding:2px 6px; border-radius:4px; font-weight:bold;">NEW</small>` : ''; const date = new Date(item.timestamp).toLocaleDateString(); l.innerHTML += `<div class="card" onclick="markUpdateRead('${key}')" style="border-left:4px solid ${!isRead ? 'var(--danger)' : 'var(--text-sub)'}; opacity:${isRead ? '0.7' : '1'}"><div style="display:flex; justify-content:space-between; margin-bottom:5px;"><strong style="color:var(--primary); font-size:16px;">${item.title}</strong>${badge}</div><p style="font-size:14px; margin-bottom:10px;">${item.body}</p><small style="color:var(--text-sub); font-size:11px;">${date} • By Owner</small></div>`; }); }); }
+        function markUpdateRead(key) { if(!app.readUpdates.includes(key)) { app.readUpdates.push(key); localStorage.setItem('readUpdates', JSON.stringify(app.readUpdates)); checkUpdates(); renderUpdates(); } }
+        function checkCoupon(){const c=document.getElementById('a-coupon').value; if(!c)return; db.ref('coupons/'+c).once('value',s=>{if(s.exists()&&!s.val().used){document.getElementById('c-valid').style.display='block';document.getElementById('c-invalid').style.display='none';}else{document.getElementById('c-valid').style.display='none';document.getElementById('c-invalid').style.display='block';}});}
+        
+        function openFeedback(t) {
+    currentFeedbackToken = t;
+    currentRating = 0;
+    updateStars();
+    
+    // 1. Find the order to get the Owner Name
+    const o = allOrders.find(x => x.token === t); // Note: 'allOrders' is not global in Customer app, we fetch from DB usually.
+    
+    // Since 'allOrders' variable isn't in Customer App usually, we fetch direct:
+    db.ref('orders/' + t).once('value', s => {
+        const data = s.val();
+        const ownerName = data.takenBy || "Owner";
+        
+        // 2. Update the Title dynamically
+        document.querySelector('#feedback-modal h2').innerText = `Rate ${ownerName}`;
+        document.getElementById('feedback-modal').classList.add('active');
+    });
+}
+        function setRating(n) { currentRating = n; updateStars(); }
+        function updateStars() { const stars = document.querySelectorAll('.star'); stars.forEach((s, i) => { if (i < currentRating) s.style.color = '#FFD700'; else s.style.color = '#ddd'; }); }
+        function submitFeedback() { const c = document.getElementById('feedback-comment').value; if (currentRating === 0) return showAlert("Error", "Please select a star rating."); db.ref('orders/' + currentFeedbackToken + '/feedback').set({ rating: currentRating, comment: c || "No comment" }).then(() => { showAlert("Thank You", "Feedback Sent!"); document.getElementById('feedback-modal').classList.remove('active'); loadOrders('status'); }); }
+        
+        function payAndShare(token,type,amt){db.ref('adminSettings/upi').once('value',s=>{showAlert("Payment",`Send ₹${amt} to UPI: ${s.val()||"Ask Owner"}\n\n1. Pay in App.\n2. Click OK to share screenshot.`);document.querySelector('#custom-alert-overlay button').onclick=()=>{window.open(`https://wa.me/916901983382?text=${encodeURIComponent(`Paid ₹${amt} (${type}) for Order ${token}. Here is screenshot:`)}`,'_blank');closeAlert();};});}
+        function toggleRefundInput(){document.getElementById('r-other-div').style.display=document.getElementById('r-reason').value==='Other'?'block':'none';}
+        function requestPremium() {
+  const t = document.getElementById('offer-token').value.trim();
+  if (!t) return showAlert("Error", "Enter Token");
+  
+  // 1. Check Ownership
+  if (!app.tokens.includes(t)) return showAlert("Invalid", "Token not yours");
+  
+  db.ref('orders/' + t).once('value', orderSnap => {
+    const order = orderSnap.val();
+    // 2. Check Status
+    if (!order || !['In Progress', 'Completed', 'Delivered'].includes(order.status)) {
+      return showAlert("Locked", "Work must be started (In Progress) to unlock this offer.");
+    }
+    
+    db.ref('offers/' + t).once('value', s => {
+      const offer = s.val();
+      
+      if (offer) {
+        // CASE: Already Unlocked -> Go to Game
+        if (offer.status === 'Unlocked') {
+          listenToOffer(t);
+          return;
+        }
+        // CASE: Already Finished
+        if (offer.status === 'Claimed' || offer.status === 'Paid') {
+          showAlert("Completed", "You have already won/claimed this reward.");
+          // Show status visually
+          listenToOffer(t);
+          return;
+        }
+        // CASE: Request Sent but not Unlocked
+        if (offer.status === 'Requested') {
+          showAlert("Pending", "Request sent. Waiting for Owner to unlock.");
+          // Update UI text
+          document.getElementById('offer-status').style.display = 'block';
+          document.getElementById('offer-status').innerText = "Request Pending. Waiting for Owner...";
+          return;
+        }
+      }
+      
+      // CASE: New Request (Pay ₹89)
+      db.ref('adminSettings/upi').once('value', upiSnap => {
+        showAlert("Premium Unlock", `Pay ₹89 to UPI: ${upiSnap.val()||"Ask Owner"}\n\nClick OK after payment.`);
+        
+        document.querySelector('#custom-alert-overlay button').onclick = () => {
+          db.ref('offers/' + t).set({
+            token: t,
+            status: 'Requested',
+            timestamp: Date.now()
+          });
+          
+          document.getElementById('offer-status').style.display = 'block';
+          document.getElementById('offer-status').innerText = "Request Pending...";
+          pushNotify(t, "Premium Request Sent. Waiting for approval.", "Premium");
+          
+          closeAlert();
+          listenToOffer(t);
+        };
+      });
+    });
+  });
+}
+function reqRefund() {
+    if (!db) return showAlert("Offline", "Check Internet");
+    
+    const t = document.getElementById('r-token').value;
+    const u = document.getElementById('r-upi').value;
+    const r = document.getElementById('r-reason').value;
+    
+    if (!t || !r) return showAlert("Error", "Fill Details");
+    
+    db.ref('orders/' + t).once('value', s => {
+        const d = s.val();
+        if (!d) return showAlert("Error", "Invalid Token");
+        
+        // Check if user should provide UPI
+        const paid = d.paidAdv || d.paidFinal;
+        if (paid && !u) return showAlert("Missing", "UPI ID Required (You have paid)");
+        
+        // 1. Send to Database
+        db.ref('refunds/' + t).set({
+            token: t,
+            upi: u || 'N/A',
+            reason: r === 'Other' ? document.getElementById('r-other-val').value : r,
+            status: 'Pending'
+        }).then(() => {
+            // 2. NOTIFY CUSTOMER IMMEDIATELY
+            pushNotify(t, "Refund request submitted. Waiting for Owner approval.", "Refund Requested");
+            
+            showAlert("Success", "Request Sent");
+            nav('home');
+            sendToOwner("Refund Request", `Order #${t}`);
+        });
+    });
+}        function updateRedDot(){document.getElementById('notif-dot').style.display=app.notifHistory.some(n=>!n.read)?'block':'none';}
+        function markAllRead(){app.notifHistory.forEach(n=>n.read=true);localStorage.setItem('notifHistory',JSON.stringify(app.notifHistory));updateRedDot();}
+        function copyDraftToken(){navigator.clipboard.writeText(app.currentDraftToken);showAlert("Copied","Token copied!");}
+        function showTokenSuccess(t){document.getElementById('alert-title').innerText="Order Placed!";document.getElementById('alert-msg').innerHTML=`Token: <b style="color:var(--primary);">${t}</b>`;document.getElementById('alert-actions').innerHTML=`<button class="btn-main" onclick="closeAlert();nav('status');">OK</button>`;document.getElementById('custom-alert-overlay').style.display='flex';}
+        function showAlert(t,m){document.getElementById('alert-title').innerText=t;document.getElementById('alert-msg').innerText=m;document.getElementById('alert-actions').innerHTML=`<button class="btn-main" onclick="closeAlert()">OK</button>`;document.getElementById('custom-alert-overlay').style.display='flex';}
+        function showConfirm(m,c){document.getElementById('alert-title').innerText="Confirm";document.getElementById('alert-msg').innerText=m;document.getElementById('alert-actions').innerHTML=`<button class="btn-main" style="background:var(--text-sub);margin-right:10px;flex:1;" onclick="closeAlert()">Cancel</button><button class="btn-main" style="flex:1;" id="confirm-yes">Yes</button>`;document.getElementById('confirm-yes').onclick=()=>{c();closeAlert();};document.getElementById('custom-alert-overlay').style.display='flex';}
+        function closeAlert(){document.getElementById('custom-alert-overlay').style.display='none';}
+        
+        // --- SECURITY: DISABLE INSPECT & RIGHT CLICK ---
+document.addEventListener('contextmenu', event => event.preventDefault()); // Block Right Click
+
+document.onkeydown = function(e) {
+    // Block F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+    if (e.keyCode == 123) {
+        return false;
+    }
+    if (e.ctrlKey && e.shiftKey && (e.keyCode == 'I'.charCodeAt(0) || e.keyCode == 'J'.charCodeAt(0))) {
+        return false;
+    }
+    if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) {
+        return false;
+    }
+}
+    </script>
+</body>
+</html>
