@@ -1,0 +1,23 @@
+{
+  "name": "Jupi§o Ink",
+  "short_name": "Jupi§o",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#DC143C",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/964483c1342cc565ee185b1bad6dcd78.jpg",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/964483c1342cc565ee185b1bad6dcd78.jpg",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
